@@ -21,10 +21,12 @@
 
 package es.wolfi.app.passman;
 
+import android.app.AlertDialog;
 import android.app.KeyguardManager;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -51,6 +53,7 @@ import androidx.fragment.app.FragmentManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.koushikdutta.async.future.FutureCallback;
+import com.loopj.android.http.AsyncHttpResponseHandler;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -58,14 +61,17 @@ import org.json.JSONObject;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Objects;
 
+import es.wolfi.app.ResponseHandlers.CredentialDeleteResponseHandler;
 import es.wolfi.passman.API.Core;
 import es.wolfi.passman.API.Credential;
 import es.wolfi.passman.API.File;
 import es.wolfi.passman.API.Vault;
 import es.wolfi.utils.FileUtils;
+import es.wolfi.utils.ProgressUtils;
 
 public class PasswordList extends AppCompatActivity implements
         VaultFragment.OnListFragmentInteractionListener,
@@ -138,7 +144,7 @@ public class PasswordList extends AppCompatActivity implements
         checkFragmentPosition(true);
         if (running) return;
 
-        initialAuthentication(false);
+        showLastAlphaVersionAlert();
     }
 
     private void initialAuthentication(boolean skipKeyguard) {
@@ -184,6 +190,36 @@ public class PasswordList extends AppCompatActivity implements
         progress.setCancelable(false); // disable dismiss by tapping outside of the dialog
 
         return progress;
+    }
+
+    private void showLastAlphaVersionAlert() {
+        if (!running) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Please consider switching to our new stable Passman Android App.\n\n" +
+                    "The currently installed app will not longer receive updates!");
+            builder.setCancelable(true);
+            builder.setPositiveButton("Open Play Store", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    openExternalURL("https://play.google.com/store/apps/details?id=es.wolfi.app.passman");
+                }
+            });
+            builder.setNeutralButton("Download apk", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    openExternalURL("https://github.com/nextcloud/passman-android/releases");
+                }
+            });
+            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialogInterface) {
+                    initialAuthentication(false);
+                }
+            });
+            builder.show();
+        } else {
+            initialAuthentication(false);
+        }
     }
 
     public void showVaults() {
